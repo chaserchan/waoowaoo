@@ -1,6 +1,25 @@
 You are a professional environment prompt designer.
 Generate one scene prompt for image generation.
 
+【Art Style Determination】
+
+⚠️ Based on the art_style parameter, determine the description style:
+
+**If art_style is "cute-hyperrealistic-pet"**: Use ultra-realistic photography style (see enhanced rules below)
+
+**If art_style is other value or not specified**: Use original rules
+
+【Ultra-Realistic Photography Style Enhanced Rules】(only for cute-hyperrealistic-pet):
+
+**Photography Style Requirements:**
+- Ultra-realistic high-definition real shot texture, 8K RAW format quality
+- Real scene photography texture, strictly preserving scene authentic details
+- No cartoon, Q version, 3D modeling, 2D animation style
+- Natural soft real physical lighting, warm tones, transparent
+- Large aperture shallow depth of field with blurred background, highlighting the subject
+- Cinematic color grading, rich details down to material texture
+- 100% authentic real scene photography effect, no AI generation traces
+
 User request:
 {user_input}
 

@@ -162,6 +162,13 @@ export const ART_STYLES = [
     preview: '实',
     promptZh: '真实电影级画面质感，真实现实场景，色彩饱满通透，画面干净精致，真实感',
     promptEn: 'Realistic cinematic look, real-world scene fidelity, rich transparent colors, clean and refined image quality.'
+  },
+  {
+    value: 'cute-hyperrealistic-pet',
+    label: '治愈萌宠风',
+    preview: '萌',
+    promptZh: '超写实拟人化动物IP风格，电影感商业摄影美学，写真级细腻质感，8K超清分辨率，毛发根根分明真实感极强，自然真实光影逻辑，通透清新的影调，暗部不死黑亮部不溢出，色彩柔和温暖治愈，大光圈浅景深背景虚化，专业商业摄影构图，角色与环境完美融合，电影级运镜感，强烈的实拍感，治愈系萌宠拟人化审美，反差萌核心，猫咪穿上人类服饰做出人类行为，构建完整的角色人设，有故事有温度有辨识度的萌宠角色设计',
+    promptEn: 'Ultra-realistic anthropomorphic animal IP style, cinematic commercial photography aesthetic, photorealistic texture, 8K ultra-clear resolution, realistic fur with fine detail, natural realistic lighting logic, fresh transparent tones, rich shadow detail without crush, soft warm healing colors, shallow depth of field with natural background blur, professional commercial photography composition, character and environment perfectly integrated, cinematic camera movement feel, strong realistic photography sense, healing cute anthropomorphic aesthetic, core cuteness contrast, cats wearing human clothing and behaving like humans, complete character persona design, storytelling warm and recognizable pet character.'
   }
 ]
 
@@ -187,6 +194,15 @@ export function getArtStylePrompt(
   if (!style) return ''
   return locale === 'en' ? style.promptEn : style.promptZh
 }
+
+// 治愈萌宠风专用的角色图片后缀（三视图+超写实摄影）
+export const CHARACTER_PROMPT_SUFFIX_CUTE_PET = '角色设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是角色的正面特写（展示最具辨识度的正面形态）；【右侧区域】占约2/3宽度，是角色三视图横向排列（从左到右依次为：正面全身站立拟人状态、侧面全身站立拟人状态、背面全身站立拟人状态），三视图高度一致。毛发极致写实根根分明，自然物理光影，百分百还原真实宠物相机拍摄效果。超写实高清实拍质感，8K RAW格式直出。纯白色背景，无其他元素。'
+
+// 写实风格专用的角色图片后缀（不使用三视图和纯白背景）
+export const CHARACTER_PROMPT_SUFFIX_REALISTIC = '角色主题摄影，正面全身照，自然光线下取景，大光圈浅景深，柔和的背景虚化，专业的商业摄影构图，真实感强烈。'
+
+// 需要使用写实风格后缀的艺术风格列表
+export const REALISTIC_ART_STYLES = ['realistic', 'cute-hyperrealistic-pet'] as const
 
 // 角色形象生成的系统后缀（始终添加到提示词末尾，不显示给用户）- 左侧面部特写+右侧三视图
 export const CHARACTER_PROMPT_SUFFIX = '角色设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是角色的正面特写（如果是人类则展示完整正脸，如果是动物/生物则展示最具辨识度的正面形态）；【右侧区域】占约2/3宽度，是角色三视图横向排列（从左到右依次为：正面全身、侧面全身、背面全身），三视图高度一致。纯白色背景，无其他元素。'
@@ -219,13 +235,20 @@ export const LOCATION_IMAGE_BANANA_RATIO = '1:1'
 // 从提示词中移除角色系统后缀（用于显示给用户）
 export function removeCharacterPromptSuffix(prompt: string): string {
   if (!prompt) return ''
-  return prompt.replace(CHARACTER_PROMPT_SUFFIX, '').trim()
+  return prompt.replace(CHARACTER_PROMPT_SUFFIX, '').replace(CHARACTER_PROMPT_SUFFIX_CUTE_PET, '').trim()
 }
 
 // 添加角色系统后缀到提示词（用于生成图片）
-export function addCharacterPromptSuffix(prompt: string): string {
+// artStyle 参数用于选择不同的后缀风格
+export function addCharacterPromptSuffix(prompt: string, artStyle?: string): string {
   if (!prompt) return CHARACTER_PROMPT_SUFFIX
   const cleanPrompt = removeCharacterPromptSuffix(prompt)
+
+  // 根据艺术风格选择后缀
+  if (artStyle === 'cute-hyperrealistic-pet') {
+    return `${cleanPrompt}${cleanPrompt ? '，' : ''}${CHARACTER_PROMPT_SUFFIX_CUTE_PET}`
+  }
+
   return `${cleanPrompt}${cleanPrompt ? '，' : ''}${CHARACTER_PROMPT_SUFFIX}`
 }
 
