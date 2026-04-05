@@ -6,10 +6,10 @@
  * after every received chunk, so long-running but *active* streams
  * are never interrupted.
  *
- * Default timeout: 3 minutes (180 000 ms).
+ * Default timeout: 10 minutes (600 000 ms).
  */
 
-const DEFAULT_STREAM_CHUNK_TIMEOUT_MS = 3 * 60 * 1000
+const DEFAULT_STREAM_CHUNK_TIMEOUT_MS = 10 * 60 * 1000
 
 export class StreamChunkTimeoutError extends Error {
     constructor(timeoutMs: number) {
