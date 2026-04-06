@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git add -A && git commit -m \\\"$(cat <<'EOF'\\nfeat: route voice-description-generate through task queue\\n\\n- Add VOICE_DESCRIPTION_GENERATE task type\\n- Move LLM call from API route to voic...",
+  "error": "Exit code 1\nwarning: in the working copy of 'src/lib/workers/voice.worker.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.omc/state/hud-state.json', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.omc/state/last-tool-error.json', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'lib/prompts/voice-description-generate/en.txt', LF will be replaced by CRLF the next time...",
+  "timestamp": "2026-04-06T09:31:36.412Z",
+  "retry_count": 1
+}

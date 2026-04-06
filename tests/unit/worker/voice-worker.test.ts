@@ -51,6 +51,36 @@ vi.mock('@/lib/workers/handlers/voice-design', () => ({
   handleVoiceDesignTask: handleVoiceDesignTaskMock,
 }))
 
+vi.mock('@/lib/workers/handlers/resolve-analysis-model', () => ({
+  resolveAnalysisModel: vi.fn(async () => 'llm::analysis'),
+}))
+
+vi.mock('@/lib/llm-observe/internal-stream-context', () => ({
+  withInternalLLMStreamCallbacks: vi.fn(async (callbacks, fn) => await fn()),
+}))
+
+vi.mock('@/lib/workers/llm-stream', () => ({
+  createWorkerLLMStreamCallbacks: vi.fn(() => ({ flush: vi.fn(async () => undefined) })),
+  createWorkerLLMStreamContext: vi.fn(() => ({ streamRunId: 'run:test', nextSeqByStepLane: {} })),
+}))
+
+vi.mock('@/lib/ai-runtime', () => ({
+  executeAiTextStep: vi.fn(async () => ({ text: '年龄：30\n性别：女\n音色：温柔\n语调：平缓' })),
+}))
+
+vi.mock('@/lib/config-service', () => ({
+  getUserModelConfig: vi.fn(async () => ({ analysisModel: 'llm::analysis' })),
+}))
+
+vi.mock('@/lib/prompt-i18n', () => ({
+  buildPrompt: vi.fn(() => 'mock prompt'),
+  PROMPT_IDS: { VOICE_DESCRIPTION_GENERATE: 'voice_description_generate' },
+}))
+
+vi.mock('@/lib/workers/utils', () => ({
+  assertTaskActive: vi.fn(async () => {}),
+}))
+
 function buildJob(params: {
   type: TaskJobData['type']
   targetType?: string
@@ -156,6 +186,28 @@ describe('worker voice processor behavior', () => {
 
     expect(handleVoiceDesignTaskMock).toHaveBeenCalledTimes(2)
     expect(generateVoiceLineMock).not.toHaveBeenCalled()
+  })
+
+  it('VOICE_DESCRIPTION_GENERATE: 生成声音描述', async () => {
+    const processor = workerState.processor
+    expect(processor).toBeTruthy()
+
+    const descJob = buildJob({
+      type: TASK_TYPE.VOICE_DESCRIPTION_GENERATE,
+      targetType: 'GlobalAssetHubVoiceDescription',
+      targetId: 'user-1',
+      payload: {
+        speaker: '旁白',
+        role: '解说员',
+        age: '30',
+        appearance: '斯文',
+        personality: '温和',
+        locale: 'zh',
+      },
+    })
+
+    const result = await processor!(descJob)
+    expect(result).toEqual({ description: '年龄：30\n性别：女\n音色：温柔\n语调：平缓' })
   })
 
   it('未知任务类型: 显式报错', async () => {

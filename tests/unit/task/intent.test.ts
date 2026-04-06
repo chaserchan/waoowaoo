@@ -16,6 +16,10 @@ describe('resolveTaskIntent', () => {
     expect(resolveTaskIntent(TASK_TYPE.MODIFY_ASSET_IMAGE)).toBe('modify')
   })
 
+  it('maps voice task types', () => {
+    expect(resolveTaskIntent(TASK_TYPE.VOICE_DESCRIPTION_GENERATE)).toBe('generate')
+  })
+
   it('falls back to process for unknown types', () => {
     expect(resolveTaskIntent('unknown_type')).toBe('process')
     expect(resolveTaskIntent(null)).toBe('process')

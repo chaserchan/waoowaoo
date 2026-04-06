@@ -52,6 +52,7 @@ const ROUTE_FILES = [
   'src/app/api/asset-hub/upload-image/route.ts',
   'src/app/api/asset-hub/upload-temp/route.ts',
   'src/app/api/asset-hub/voice-design/route.ts',
+  'src/app/api/asset-hub/voice-description-generate/route.ts',
   'src/app/api/asset-hub/voices/[id]/route.ts',
   'src/app/api/asset-hub/voices/route.ts',
   'src/app/api/asset-hub/voices/upload/route.ts',

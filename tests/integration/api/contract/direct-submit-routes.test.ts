@@ -384,6 +384,13 @@ const DIRECT_CASES: ReadonlyArray<DirectRouteCase> = [
     expectedProjectId: 'global-asset-hub',
   },
   {
+    routeFile: 'src/app/api/asset-hub/voice-description-generate/route.ts',
+    body: { speaker: '旁白', role: '解说员', age: '30', appearance: '斯文', personality: '温和' },
+    expectedTaskType: TASK_TYPE.VOICE_DESCRIPTION_GENERATE,
+    expectedTargetType: 'GlobalAssetHubVoiceDescription',
+    expectedProjectId: 'global-asset-hub',
+  },
+  {
     routeFile: 'src/app/api/novel-promotion/[projectId]/generate-image/route.ts',
     body: { type: 'character', id: 'character-1', appearanceId: 'appearance-1' },
     params: { projectId: 'project-1' },
@@ -561,7 +568,7 @@ describe('api contract - direct submit routes (behavior)', () => {
   })
 
   it('keeps expected coverage size', () => {
-    expect(DIRECT_CASES.length).toBe(20)
+    expect(DIRECT_CASES.length).toBe(21)
   })
 
   for (const routeCase of DIRECT_CASES) {
