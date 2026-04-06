@@ -20,7 +20,7 @@ export const PROMPT_CATALOG: Record<PromptId, PromptCatalogEntry> = {
   },
   [PROMPT_IDS.NP_AGENT_CHARACTER_VISUAL]: {
     pathStem: 'novel-promotion/agent_character_visual',
-    variableKeys: ['character_profiles'],
+    variableKeys: ['character_profiles', 'art_style'],
   },
   [PROMPT_IDS.NP_AGENT_CINEMATOGRAPHER]: {
     pathStem: 'novel-promotion/agent_cinematographer',

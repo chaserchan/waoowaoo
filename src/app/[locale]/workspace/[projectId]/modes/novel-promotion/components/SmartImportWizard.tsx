@@ -61,7 +61,7 @@ export default function SmartImportWizard({
   }
 
   if (wizard.stage === 'analyzing') {
-    return <StepParse />
+    return <StepParse projectId={projectId} />
   }
 
   return (
@@ -89,6 +89,18 @@ export default function SmartImportWizard({
         onCloseDeleteConfirm={wizard.closeDeleteConfirm}
         onConfirmDeleteEpisode={wizard.confirmDeleteEpisode}
       />
+
+      {/* 保持 SSE 流式输出显示，直到任务完成 */}
+      {wizard.orphanedStream && (
+        <div className="mt-4">
+          <StepParse
+            projectId={projectId}
+            taskId={wizard.orphanedStream.taskId}
+            orphaned
+            onStreamEnd={() => wizard.setOrphanedStream(null)}
+          />
+        </div>
+      )}
     </div>
   )
 }

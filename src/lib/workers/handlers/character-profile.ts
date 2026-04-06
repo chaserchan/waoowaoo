@@ -58,6 +58,7 @@ async function handleConfirmProfile(
   }
 
   const parsedProfile = JSON.parse(finalProfileData) as AnyObj
+  const artStyleValue = project.novelPromotionData!.artStyle || ''
   const promptTemplate = buildPrompt({
     promptId: PROMPT_IDS.NP_AGENT_CHARACTER_VISUAL,
     locale: job.data.locale,
@@ -72,6 +73,7 @@ async function handleConfirmProfile(
         null,
         2,
       ),
+      art_style: artStyleValue || '',
     },
   })
 

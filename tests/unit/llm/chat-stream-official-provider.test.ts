@@ -29,6 +29,19 @@ const completeBailianLlmMock = vi.hoisted(() =>
   })),
 )
 
+const completeBailianLlmStreamMock = vi.hoisted(() =>
+  vi.fn(async function* () {
+    yield {
+      id: 'chatcmpl_stream_mock',
+      object: 'chat.completion.chunk',
+      created: 1,
+      model: 'qwen3.5-plus',
+      choices: [{ index: 0, delta: { content: 'stream-ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 2, completion_tokens: 2 },
+    } as never
+  }),
+)
+
 const completeSiliconFlowLlmMock = vi.hoisted(() =>
   vi.fn(async () => {
     throw new Error('siliconflow should not be called')
@@ -67,6 +80,7 @@ vi.mock('@/lib/api-config', () => ({
 
 vi.mock('@/lib/providers/bailian', () => ({
   completeBailianLlm: completeBailianLlmMock,
+  completeBailianLlmStream: completeBailianLlmStreamMock,
 }))
 
 vi.mock('@/lib/providers/siliconflow', () => ({
@@ -107,7 +121,7 @@ describe('llm chatCompletionStream official provider branch', () => {
       },
     )
 
-    expect(completeBailianLlmMock).toHaveBeenCalledWith({
+    expect(completeBailianLlmStreamMock).toHaveBeenCalledWith({
       modelId: 'qwen3.5-plus',
       messages: [{ role: 'user', content: 'hello' }],
       apiKey: 'bl-key',

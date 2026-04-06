@@ -10,7 +10,7 @@ import {
   useSplitProjectEpisodes,
   useSplitProjectEpisodesByMarkers,
 } from '@/lib/query/hooks'
-import type { DeleteConfirmState, SplitEpisode, WizardStage } from '../types'
+import type { DeleteConfirmState, OrphanedStage, SplitEpisode, WizardStage } from '../types'
 
 type TranslateValues = Record<string, string | number | Date>
 type Translate = (key: string, values?: TranslateValues) => string
@@ -32,6 +32,7 @@ export function useWizardState({ projectId, importStatus, onImportComplete, t, i
   const [selectedEpisode, setSelectedEpisode] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({ show: false, index: -1, title: '' })
+  const [orphanedStream, setOrphanedStream] = useState<{ stage: OrphanedStage; taskId: string } | null>(null)
   const [markerResult, setMarkerResult] = useState<EpisodeMarkerResult | null>(null)
   const [showMarkerConfirm, setShowMarkerConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -74,13 +75,24 @@ export function useWizardState({ projectId, importStatus, onImportComplete, t, i
 
     try {
       _ulogInfo('[SmartImport] 开始调用 split API...')
-      const data = await splitProjectEpisodesMutation.mutateAsync({ content: rawContent, async: true })
+      // 不等待任务完成：立即获取 taskId 用于 SSE 监听，同时切换到 preview
+      const data = await splitProjectEpisodesMutation.mutateAsync({ content: rawContent, async: true }) as { taskId?: string; episodes?: SplitEpisode[] }
       const splitEpisodes = data.episodes || []
+      const taskId = data.taskId
       setEpisodes(splitEpisodes)
 
-      let saveSucceeded = true
-      try {
-        await saveProjectEpisodesBatchMutation.mutateAsync({
+      // 立即切换到 preview，同时保持 SSE 流式输出
+      // orphanedStream 用于让 StepParse 继续监听直到任务完成
+      if (taskId) {
+        setOrphanedStream({ stage: 'analyzing', taskId })
+        setStage('preview')
+      } else {
+        setStage('preview')
+      }
+
+      // 后台保存（不阻塞 UI）
+      if (splitEpisodes.length > 0) {
+        void saveProjectEpisodesBatchMutation.mutateAsync({
           episodes: splitEpisodes.map((ep: SplitEpisode) => ({
             name: ep.title,
             description: ep.summary,
@@ -88,16 +100,10 @@ export function useWizardState({ projectId, importStatus, onImportComplete, t, i
           })),
           clearExisting: true,
           importStatus: 'pending',
+        }).catch(() => {
+          _ulogWarn('[SmartImport] 自动保存失败，继续显示预览')
         })
-      } catch {
-        saveSucceeded = false
-        _ulogWarn('[SmartImport] 自动保存失败，继续显示预览')
       }
-      if (saveSucceeded) {
-        _ulogInfo('[SmartImport] 剧集已自动保存到数据库，状态：pending')
-      }
-
-      setStage('preview')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('errors.analyzeFailed')
       setError(message || t('errors.analyzeFailed'))
@@ -278,6 +284,8 @@ export function useWizardState({ projectId, importStatus, onImportComplete, t, i
     markerResult,
     showMarkerConfirm,
     deleteConfirm,
+    orphanedStream,
+    setOrphanedStream,
     handleAnalyze,
     performAISplit,
     handleMarkerSplit,

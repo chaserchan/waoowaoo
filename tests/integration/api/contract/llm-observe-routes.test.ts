@@ -305,7 +305,7 @@ const ROUTE_CASES: ReadonlyArray<LLMRouteCase> = [
   },
   {
     routeFile: 'src/app/api/novel-promotion/[projectId]/episodes/split/route.ts',
-    body: { content: 'x'.repeat(120) },
+    body: { content: 'x'.repeat(120), locale: 'zh', meta: { locale: 'zh' } },
     params: { projectId: 'project-1' },
     expectedTaskType: TASK_TYPE.EPISODE_SPLIT_LLM,
     expectedTargetType: 'NovelPromotionProject',

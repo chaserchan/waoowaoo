@@ -28,6 +28,7 @@ export async function resolveProjectModel(projectId: string) {
         select: {
           id: true,
           analysisModel: true,
+          artStyle: true,
         },
       },
     },

@@ -34,7 +34,7 @@ export const POST = apiHandler(async (
     targetType: 'NovelPromotionProject',
     targetId: projectId,
     routePath: `/api/novel-promotion/${projectId}/episodes/split`,
-    body: { content },
+    body: { content, locale: 'zh', meta: { locale: 'zh' } },
     dedupeKey: `episode_split_llm:${projectId}:${content.length}`})
   if (asyncTaskResponse) return asyncTaskResponse
 

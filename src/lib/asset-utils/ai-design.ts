@@ -75,8 +75,8 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
                 user_input: userInstruction,
             },
         })
-    } catch {
-        _ulogError('[AI Design] 提示词加载失败')
+    } catch (e) {
+        _ulogError('[AI Design] 提示词加载失败', { error: e instanceof Error ? e.message : String(e) })
         return { success: false, error: '系统配置错误' }
     }
 
@@ -125,6 +125,25 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
         return { success: false, error: 'AI返回格式错误' }
     }
 
+    // location 类型返回 { locations: [...] }，取第一个场景的 descriptions[0] 作为 prompt
+    if (assetType === 'location') {
+        const locations = parsedResponse.locations as Array<Record<string, unknown>> | undefined
+        if (!locations || locations.length === 0) {
+            return { success: false, error: 'AI返回缺少locations字段' }
+        }
+        const firstLocation = locations[0]
+        const descriptions = firstLocation?.descriptions as string[] | undefined
+        const promptText = descriptions?.[0] || ''
+        if (!promptText) {
+            return { success: false, error: 'AI返回缺少prompt字段' }
+        }
+        return {
+            success: true,
+            prompt: promptText,
+            availableSlots: normalizeLocationAvailableSlots(firstLocation?.available_slots as string[] | undefined),
+        }
+    }
+
     if (!parsedResponse.prompt) {
         return { success: false, error: 'AI返回缺少prompt字段' }
     }
@@ -132,8 +151,6 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
     return {
         success: true,
         prompt: typeof parsedResponse.prompt === 'string' ? parsedResponse.prompt : '',
-        availableSlots: assetType === 'location'
-            ? normalizeLocationAvailableSlots(parsedResponse.available_slots)
-            : [],
+        availableSlots: [],
     }
 }

@@ -198,8 +198,8 @@ export function getArtStylePrompt(
 // 治愈萌宠风专用的角色图片后缀（三视图+超写实摄影）
 export const CHARACTER_PROMPT_SUFFIX_CUTE_PET = '角色设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是角色的正面特写（展示最具辨识度的正面形态）；【右侧区域】占约2/3宽度，是角色三视图横向排列（从左到右依次为：正面全身站立拟人状态、侧面全身站立拟人状态、背面全身站立拟人状态），三视图高度一致。毛发极致写实根根分明，自然物理光影，百分百还原真实宠物相机拍摄效果。超写实高清实拍质感，8K RAW格式直出。纯白色背景，无其他元素。'
 
-// 写实风格专用的角色图片后缀（不使用三视图和纯白背景）
-export const CHARACTER_PROMPT_SUFFIX_REALISTIC = '角色主题摄影，正面全身照，自然光线下取景，大光圈浅景深，柔和的背景虚化，专业的商业摄影构图，真实感强烈。'
+// 写实风格专用的角色图片后缀（不使用卡通三视图和纯白背景）
+export const CHARACTER_PROMPT_SUFFIX_REALISTIC = '角色主题摄影，写实纪录感生活影像，自然光线下取景，大光圈浅景深，柔和的背景虚化，专业的商业摄影构图，真实五官比例，非网红脸，允许轻微瑕疵，不磨皮、不美颜、不滤镜，人物气质设定保持一致，真实感强烈。'
 
 // 需要使用写实风格后缀的艺术风格列表
 export const REALISTIC_ART_STYLES = ['realistic', 'cute-hyperrealistic-pet'] as const
@@ -207,11 +207,11 @@ export const REALISTIC_ART_STYLES = ['realistic', 'cute-hyperrealistic-pet'] as 
 // 角色形象生成的系统后缀（始终添加到提示词末尾，不显示给用户）- 左侧面部特写+右侧三视图
 export const CHARACTER_PROMPT_SUFFIX = '角色设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是角色的正面特写（如果是人类则展示完整正脸，如果是动物/生物则展示最具辨识度的正面形态）；【右侧区域】占约2/3宽度，是角色三视图横向排列（从左到右依次为：正面全身、侧面全身、背面全身），三视图高度一致。纯白色背景，无其他元素。'
 
-// 道具图片生成的系统后缀（固定白底三视图资产图）
-export const PROP_PROMPT_SUFFIX = '道具设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是道具主体的主视图特写；【右侧区域】占约2/3宽度，是同一道具的三视图横向排列（从左到右依次为：正面、侧面、背面），三视图高度一致。纯白色背景，主体居中完整展示，无人物、无手部、无桌面陈设、无环境背景、无其他元素。'
+// 道具图片生成的系统后缀（写实摄影风格）
+export const PROP_PROMPT_SUFFIX = '道具主题摄影，写实纪录感生活影像，自然光线下取景，大光圈浅景深，柔和的背景虚化，专业的商业摄影构图，真实质感呈现，允许轻微瑕疵，不滤镜、不美颜。'
 
-// 场景图片生成的系统后缀（已禁用四视图，直接生成单张场景图）
-export const LOCATION_PROMPT_SUFFIX = ''
+// 场景图片生成的系统后缀（写实摄影风格）
+export const LOCATION_PROMPT_SUFFIX = '场景主题摄影，写实纪录感生活影像，自然光线下取景，大光圈浅景深，柔和的背景虚化，专业的商业摄影构图，真实环境质感，允许轻微瑕疵，不滤镜、不美颜，场景气质设定保持一致。'
 
 // 角色资产图生成比例（当前角色设定图实际使用 3:2）
 export const CHARACTER_ASSET_IMAGE_RATIO = '3:2'
@@ -235,7 +235,11 @@ export const LOCATION_IMAGE_BANANA_RATIO = '1:1'
 // 从提示词中移除角色系统后缀（用于显示给用户）
 export function removeCharacterPromptSuffix(prompt: string): string {
   if (!prompt) return ''
-  return prompt.replace(CHARACTER_PROMPT_SUFFIX, '').replace(CHARACTER_PROMPT_SUFFIX_CUTE_PET, '').trim()
+  return prompt
+    .replace(CHARACTER_PROMPT_SUFFIX, '')
+    .replace(CHARACTER_PROMPT_SUFFIX_CUTE_PET, '')
+    .replace(CHARACTER_PROMPT_SUFFIX_REALISTIC, '')
+    .trim()
 }
 
 // 添加角色系统后缀到提示词（用于生成图片）
@@ -247,6 +251,11 @@ export function addCharacterPromptSuffix(prompt: string, artStyle?: string): str
   // 根据艺术风格选择后缀
   if (artStyle === 'cute-hyperrealistic-pet') {
     return `${cleanPrompt}${cleanPrompt ? '，' : ''}${CHARACTER_PROMPT_SUFFIX_CUTE_PET}`
+  }
+
+  // 写实风格使用写实摄影后缀（不使用卡通三视图）
+  if (REALISTIC_ART_STYLES.includes(artStyle as 'realistic' | 'cute-hyperrealistic-pet')) {
+    return `${cleanPrompt}${cleanPrompt ? '，' : ''}${CHARACTER_PROMPT_SUFFIX_REALISTIC}`
   }
 
   return `${cleanPrompt}${cleanPrompt ? '，' : ''}${CHARACTER_PROMPT_SUFFIX}`

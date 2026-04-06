@@ -1,5 +1,5 @@
 export { ensureBailianCatalogRegistered, listBailianCatalogModels } from './catalog'
-export { completeBailianLlm } from './llm'
+export { completeBailianLlm, completeBailianLlmStream } from './llm'
 export { generateBailianImage } from './image'
 export { generateBailianVideo } from './video'
 export { generateBailianAudio } from './audio'

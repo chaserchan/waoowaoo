@@ -203,7 +203,7 @@ export async function handleReferenceToCharacterTask(job: Job<TaskJobData>) {
     promptId: PROMPT_IDS.CHARACTER_REFERENCE_TO_SHEET,
     locale: job.data.locale,
   })
-  let prompt = addCharacterPromptSuffix(basePrompt)
+  let prompt = addCharacterPromptSuffix(basePrompt, artStyle)
   if (artStylePrompt) {
     prompt = `${prompt}，${artStylePrompt}`
   }

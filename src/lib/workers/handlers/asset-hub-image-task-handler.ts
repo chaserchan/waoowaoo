@@ -93,7 +93,7 @@ export async function handleAssetHubImageTask(job: Job<TaskJobData>) {
 
     for (let i = 0; i < count; i++) {
       const raw = base[i] || base[0]
-      const prompt = artStyle ? `${addCharacterPromptSuffix(raw)}，${artStyle}` : addCharacterPromptSuffix(raw)
+      const prompt = artStyle ? `${addCharacterPromptSuffix(raw, payload.artStyle as string)}，${artStyle}` : addCharacterPromptSuffix(raw, payload.artStyle as string)
       const imageKey = await generateCleanImageToStorage({
         job,
         userId,

@@ -22,8 +22,6 @@
 【场景名称】
 {location_name}
 
-art_style: {art_style}（如果为 cute-hyperrealistic-pet 则使用超写实摄影强化风格）
-
 【场景生成要求（用于出图，中文描述）】
 
 1. **开头必须明确写明场景名称**：

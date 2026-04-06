@@ -1,9 +1,7 @@
 import type { Job } from 'bullmq'
 import { safeParseJsonObject } from '@/lib/json-repair'
 import { prisma } from '@/lib/prisma'
-import { executeAiTextStep } from '@/lib/ai-runtime'
 import { countWords } from '@/lib/word-count'
-import { withInternalLLMStreamCallbacks } from '@/lib/llm-observe/internal-stream-context'
 import { reportTaskProgress } from '@/lib/workers/shared'
 import { assertTaskActive } from '@/lib/workers/utils'
 import { getUserModelConfig } from '@/lib/config-service'
@@ -11,6 +9,7 @@ import { createTextMarkerMatcher } from '@/lib/novel-promotion/story-to-script/c
 import { createWorkerLLMStreamCallbacks, createWorkerLLMStreamContext } from './llm-stream'
 import type { TaskJobData } from '@/lib/task/types'
 import { buildPrompt, PROMPT_IDS } from '@/lib/prompt-i18n'
+import { chatCompletionStream } from '@/lib/llm/chat-stream'
 
 type EpisodeSplit = {
   number?: number
@@ -119,29 +118,35 @@ export async function handleEpisodeSplitTask(job: Job<TaskJobData>) {
     for (let attempt = 1; attempt <= MAX_EPISODE_SPLIT_ATTEMPTS; attempt += 1) {
       try {
         await assertTaskActive(job, `episode_split_attempt:${attempt}`)
-        const completion = await withInternalLLMStreamCallbacks(
-          streamCallbacks,
-          async () =>
-            await executeAiTextStep({
-              userId: job.data.userId,
-              model: analysisModel,
-              messages: [{ role: 'user', content: prompt }],
-              temperature: 0.3,
-              reasoning: true,
-              reasoningEffort: 'high',
-              projectId,
-              action: 'episode_split',
-              meta: {
-                stepId: 'episode_split',
-                stepAttempt: attempt,
-                stepTitle: '智能分集',
-                stepIndex: 1,
-                stepTotal: 1,
-              },
-            }),
+
+        // DEBUG: verify this is the new code path
+        console.log('[episode-split] USING chatCompletionStream (new code path)')
+        const streamStep = {
+          id: 'episode_split',
+          attempt,
+          title: '智能分集',
+          index: 1,
+          total: 1,
+        }
+        const completion = await chatCompletionStream(
+          job.data.userId,
+          analysisModel,
+          [{ role: 'user', content: prompt }],
+          {
+            temperature: 0.3,
+            reasoning: false,
+            projectId,
+            action: 'episode_split',
+            streamStepId: streamStep.id,
+            streamStepAttempt: streamStep.attempt,
+            streamStepTitle: streamStep.title,
+            streamStepIndex: streamStep.index,
+            streamStepTotal: streamStep.total,
+          },
+          streamCallbacks as Parameters<typeof chatCompletionStream>[4],
         )
 
-        const aiResponse = completion.text
+        const aiResponse = completion.choices[0]?.message?.content || ''
         if (!aiResponse) {
           throw new Error('AI 返回为空')
         }

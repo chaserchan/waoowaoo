@@ -37,7 +37,7 @@ import {
 import { getCompletionParts } from './completion-parts'
 import { withStreamChunkTimeout } from './stream-timeout'
 import { shouldUseOpenAIReasoningProviderOptions } from './reasoning-capability'
-import { completeBailianLlm } from '@/lib/providers/bailian'
+import { completeBailianLlm, completeBailianLlmStream } from '@/lib/providers/bailian'
 import { completeSiliconFlowLlm } from '@/lib/providers/siliconflow'
 
 const OFFICIAL_ONLY_PROVIDER_KEYS = new Set(['bailian', 'siliconflow'])
@@ -281,32 +281,48 @@ export async function chatCompletionStream(
 
     if (providerKey === 'bailian') {
       emitStreamStage(callbacks, streamStep, 'streaming', providerKey)
-      const completion = await completeBailianLlm({
+      const bailianParams = {
         modelId: resolvedModelId,
         messages,
         apiKey: providerConfig.apiKey,
         baseUrl: providerConfig.baseUrl,
         temperature: options.temperature ?? 0.7,
-      })
-      const completionParts = getCompletionParts(completion)
+      }
       let seq = 1
-      if (completionParts.reasoning) {
-        emitStreamChunk(callbacks, streamStep, {
-          kind: 'reasoning',
-          delta: completionParts.reasoning,
-          seq,
-          lane: 'reasoning',
-        })
-        seq += 1
+      let text = ''
+      let reasoning = ''
+      let lastUsage: { promptTokens: number; completionTokens: number } | null = null
+      for await (const chunk of completeBailianLlmStream(bailianParams)) {
+        const delta = chunk.choices[0]?.delta?.content || ''
+        const reasoningDelta = (chunk.choices[0]?.delta as Record<string, unknown>)?.thinking as string || ''
+        if (reasoningDelta) {
+          reasoning += reasoningDelta
+          emitStreamChunk(callbacks, streamStep, {
+            kind: 'reasoning',
+            delta: reasoningDelta,
+            seq,
+            lane: 'reasoning',
+          })
+          seq += 1
+        }
+        if (delta) {
+          text += delta
+          emitStreamChunk(callbacks, streamStep, {
+            kind: 'text',
+            delta,
+            seq,
+            lane: 'main',
+          })
+          seq += 1
+        }
+        if (chunk.usage) {
+          lastUsage = {
+            promptTokens: chunk.usage.prompt_tokens ?? 0,
+            completionTokens: chunk.usage.completion_tokens ?? 0,
+          }
+        }
       }
-      if (completionParts.text) {
-        emitStreamChunk(callbacks, streamStep, {
-          kind: 'text',
-          delta: completionParts.text,
-          seq,
-          lane: 'main',
-        })
-      }
+      const completion = buildOpenAIChatCompletion(resolvedModelId, text, lastUsage ?? undefined)
       logLlmRawOutput({
         userId,
         projectId,
@@ -315,13 +331,13 @@ export async function chatCompletionStream(
         modelKey: selection.modelKey,
         stream: true,
         action: options.action,
-        text: completionParts.text,
-        reasoning: completionParts.reasoning,
-        usage: completionUsageSummary(completion),
+        text,
+        reasoning,
+        usage: lastUsage,
       })
       recordCompletionUsage(resolvedModelId, completion)
       emitStreamStage(callbacks, streamStep, 'completed', providerKey)
-      callbacks?.onComplete?.(completionParts.text, streamStep)
+      callbacks?.onComplete?.(text, streamStep)
       return completion
     }
 

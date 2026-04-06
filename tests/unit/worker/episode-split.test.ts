@@ -9,6 +9,14 @@ const prismaMock = vi.hoisted(() => ({
   novelPromotionProject: {
     findFirst: vi.fn(async () => ({ id: 'np-project-1' })),
   },
+  userPreference: {
+    findUnique: vi.fn(async () => ({
+      customProviders: JSON.stringify([
+        { id: 'bailian', name: '阿里云百炼', apiKey: 'test-key', gatewayRoute: 'official' },
+      ]),
+      analysisModel: 'bailian::qwen3.5-plus',
+    })),
+  },
 }))
 
 const llmClientMock = vi.hoisted(() => ({
@@ -28,7 +36,7 @@ const llmClientMock = vi.hoisted(() => ({
 
 const configServiceMock = vi.hoisted(() => ({
   getUserModelConfig: vi.fn(async () => ({
-    analysisModel: 'llm::analysis-model',
+    analysisModel: 'bailian::qwen3.5-plus',
   })),
 }))
 
@@ -44,10 +52,63 @@ const utilsMock = vi.hoisted(() => ({
   assertTaskActive: vi.fn(async () => {}),
 }))
 
+const providersSetupMock = vi.hoisted(() => ({
+  registerOfficialModel: vi.fn(),
+  ensureBailianCatalogRegistered: vi.fn(),
+}))
+
 const llmStreamMock = vi.hoisted(() => ({
   createWorkerLLMStreamContext: vi.fn(() => ({ streamId: 'stream-1' })),
   createWorkerLLMStreamCallbacks: vi.fn(() => ({
     flush: vi.fn(async () => {}),
+  })),
+}))
+
+const chatCompletionStreamMock = vi.hoisted(() => vi.fn(async () => ({
+  choices: [{
+    message: {
+      content: JSON.stringify({
+        episodes: [{
+          number: 1,
+          title: '第一集',
+          summary: '开端',
+          startMarker: 'START_MARKER',
+          endMarker: 'END_MARKER',
+        }],
+      }),
+    },
+  }],
+})))
+
+const bailianStreamMock = vi.hoisted(() => ({
+  completeBailianLlmStream: vi.fn(async function* () {
+    const chunk = {
+      id: 'chatcmpl-test',
+      object: 'chat.completion.chunk',
+      created: 1,
+      model: 'qwen3.5-plus',
+      choices: [{ index: 0, delta: { content: 'test' }, finish_reason: null }],
+      usage: { prompt_tokens: 10, completion_tokens: 5 },
+    }
+    yield chunk as never
+    yield {
+      ...chunk,
+      choices: [{ index: 0, delta: { content: '' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 10, completion_tokens: 15 },
+    } as never
+  }),
+}))
+
+const apiConfigMock = vi.hoisted(() => ({
+  resolveLlmRuntimeModel: vi.fn(async () => ({
+    provider: 'bailian',
+    modelId: 'qwen3.5-plus',
+    modelKey: 'bailian::qwen3.5-plus',
+  })),
+  getProviderConfig: vi.fn(async () => ({
+    id: 'bailian',
+    name: '阿里云百炼',
+    apiKey: 'test-key',
   })),
 }))
 
@@ -63,7 +124,12 @@ vi.mock('@/lib/llm-observe/internal-stream-context', () => internalStreamMock)
 vi.mock('@/lib/workers/shared', () => sharedMock)
 vi.mock('@/lib/workers/utils', () => utilsMock)
 vi.mock('@/lib/workers/handlers/llm-stream', () => llmStreamMock)
+vi.mock('@/lib/llm/chat-stream', () => ({ chatCompletionStream: chatCompletionStreamMock }))
 vi.mock('@/lib/prompt-i18n', () => promptMock)
+vi.mock('@/lib/providers/bailian', () => bailianStreamMock)
+vi.mock('@/lib/providers/official/model-registry', () => ({
+  assertOfficialModelRegistered: vi.fn(),
+}))
 vi.mock('@/lib/novel-promotion/story-to-script/clip-matching', () => ({
   createTextMarkerMatcher: (content: string) => ({
     matchMarker: (marker: string, fromIndex = 0) => {
